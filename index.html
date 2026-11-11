@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Countdown Banner — Prototip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap" rel="stylesheet">
+
+<!-- ============ BİLEŞEN CSS (gömülecek kısım) ============ -->
+<style>
+.countdown {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-width: 960px;
+  height: 78px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #0039A6 0%, #74C6C8 100%);
+  color: #FFFFFF;
+  font-family: "Open Sans", sans-serif;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.countdown *, .countdown *::before, .countdown *::after { box-sizing: border-box; }
+
+.countdown__title {
+  position: relative;
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+}
+.countdown__title span { display: inline; }
+
+.countdown__timer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 62px;
+  flex: none;
+}
+.countdown__unit {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 62px;
+  padding: 4px;
+  border-radius: 4px;
+  background: #002876;
+  flex: none;
+}
+.countdown__value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 34px;
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.countdown__label { font-size: 12px; white-space: nowrap; }
+.countdown__sep {
+  display: flex;
+  align-items: center;
+  width: 7px;
+  height: 62px;
+  font-size: 22px;
+  flex: none;
+}
+.countdown__progress {
+  position: absolute;
+  inset: 0;
+  width: 58px;
+  height: 62px;
+  pointer-events: none;
+}
+
+/* Arka plan saatleri: döndürülmemiş kutu left/right + top ile yerleşir, sonra döner */
+.countdown__clock {
+  position: absolute;
+  width: var(--s);
+  height: var(--s);
+  transform: rotate(var(--r));
+  transform-origin: center;
+  pointer-events: none;
+}
+.countdown__clock img {
+  position: absolute;
+  inset: 5.21%;
+  width: 89.58%;
+  height: 89.58%;
+  display: block;
+}
+.countdown__clock--l1 { --s: 82px;   --r: -23deg;   left: 35.8px;   top: -3.2px; }
+.countdown__clock--l2 { --s: 51.9px; --r: 35.5deg;  left: 141.2px;  top: -5.8px; }
+.countdown__clock--l3 { --s: 28.9px; --r: -22.3deg; left: 196.4px;  top: 32.4px; }
+.countdown__clock--r1 { --s: 85.2px; --r: 30.5deg;  right: 19.1px;  top: -8.3px; }
+.countdown__clock--r2 { --s: 51.9px; --r: 12.5deg;  right: 130.2px; top: 21px; }
+.countdown__clock--r3 { --s: 28.9px; --r: -22.3deg; right: 196.6px; top: 7.5px; }
+
+/* Mobil düzen: site mobil ayrımına göre data-layout="mobile" verilir.
+   data-layout verilmezse JS, max-width: 959px ortam sorgusuna göre atar. */
+.countdown[data-layout="mobile"] {
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  height: auto;
+  padding: 12px;
+}
+.countdown[data-layout="mobile"] .countdown__title { font-size: 22px; }
+.countdown[data-layout="mobile"] .countdown__title span { display: block; }
+.countdown[data-layout="mobile"] .countdown__timer { width: 277px; }
+.countdown[data-layout="mobile"] .countdown__clock--l2,
+.countdown[data-layout="mobile"] .countdown__clock--l3,
+.countdown[data-layout="mobile"] .countdown__clock--r2,
+.countdown[data-layout="mobile"] .countdown__clock--r3 { display: none; }
+.countdown[data-layout="mobile"] .countdown__clock--l1 { --s: 62.6px; --r: -23deg; left: -14.3px; top: 9.7px; }
+.countdown[data-layout="mobile"] .countdown__clock--r1 { --s: 51.1px; --r: 30deg;  right: 4.5px;  top: 15.4px; }
+</style>
+
+<!-- ============ DEMO SAYFASI CSS (bileşene dahil değil) ============ -->
+<style>
+:root { --bg: #F4F5F7; --fg: #28303F; --muted: #6B7280; --line: #D9DCE3; --card: #FFFFFF; --accent: #0039A6; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 "Open Sans", system-ui, sans-serif; font-weight: 400; }
+.demo { padding: 24px 16px 48px; }
+.demo h1 { font-size: 18px; margin: 0 0 4px; }
+.demo p.lead { margin: 0 0 20px; color: var(--muted); font-family: system-ui, sans-serif; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px 32px; margin-bottom: 20px; font-family: system-ui, sans-serif; }
+.controls fieldset { border: 0; padding: 0; margin: 0; }
+.controls legend { font-size: 12px; color: var(--muted); margin-bottom: 6px; padding: 0; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button {
+  font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage-wrap { overflow-x: auto; padding-bottom: 8px; }
+.stage { width: 1500px; }
+.meta { margin-top: 12px; color: var(--muted); font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<main class="demo">
+  <h1>Countdown Banner — Prototip</h1>
+  <p class="lead">Genişlik ve senaryo seçerek handoff'taki davranışları deneyin.</p>
+
+  <div class="controls">
+    <fieldset>
+      <legend>Genişlik</legend>
+      <div class="seg" id="widths">
+        <button data-w="1500" data-layout="desktop">Desktop 1500</button>
+        <button data-w="1280" data-layout="desktop">Desktop 1280</button>
+        <button data-w="960" data-layout="desktop">Desktop 960</button>
+        <button data-w="430" data-layout="mobile">Mobil 430</button>
+        <button data-w="320" data-layout="mobile">Mobil 320</button>
+        <button data-w="auto" data-layout="">Otomatik (pencere)</button>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Senaryo</legend>
+      <div class="seg" id="scenarios">
+        <button data-s="live">Canlı (5 günlük kampanya)</button>
+        <button data-s="ref">Figma referansı (sabit)</button>
+        <button data-s="wrap">Saniye dönüşü 00 → 59</button>
+        <button data-s="end">Son 10 saniye</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <!-- ============ BİLEŞEN HTML (gömülecek kısım) ============ -->
+      <div class="countdown" id="countdown" role="timer">
+        <div class="countdown__clock countdown__clock--l1" aria-hidden="true"><img src="alarm.svg" alt=""></div>
+        <div class="countdown__clock countdown__clock--l2" aria-hidden="true"><img src="alarm.svg" alt=""></div>
+        <div class="countdown__clock countdown__clock--l3" aria-hidden="true"><img src="alarm.svg" alt=""></div>
+        <div class="countdown__clock countdown__clock--r1" aria-hidden="true"><img src="alarm.svg" alt=""></div>
+        <div class="countdown__clock countdown__clock--r2" aria-hidden="true"><img src="alarm.svg" alt=""></div>
+        <div class="countdown__clock countdown__clock--r3" aria-hidden="true"><img src="alarm.svg" alt=""></div>
+
+        <p class="countdown__title" aria-hidden="true"><span>Fırsatın Bitmesine</span> <span>Kalan Süre</span></p>
+        <div class="countdown__timer" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+  <div class="meta" id="meta"></div>
+</main>
+
+<!-- ============ BİLEŞEN JS (gömülecek kısım) ============ -->
+<script>
+(function () {
+  var UNITS = [
+    { key: 'day', label: 'Gün' },
+    { key: 'hour', label: 'Saat' },
+    { key: 'minute', label: 'Dakika' },
+    { key: 'second', label: 'Saniye' }
+  ];
+  // Üst ortadan başlar, saat yönünde döner (58 × 62 kutu, çizgi ekseni 1px içeride, r = 3)
+  var PATH = 'M 29 1 H 54 A 3 3 0 0 1 57 4 V 58 A 3 3 0 0 1 54 61 H 4 A 3 3 0 0 1 1 58 V 4 A 3 3 0 0 1 4 1 Z';
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  /**
+   * @param {HTMLElement} root  .countdown öğesi
+   * @param {{ end: string|number|Date, totalDays: number, now?: () => number }} opts
+   *   end: bitiş zamanı (ISO + saat dilimi, ör. "2026-11-20T23:59:59+03:00")
+   *   totalDays: kampanyanın toplam gün sayısı
+   *   now: yalnızca test/demo için saat kaynağı
+   */
+  function mountCountdown(root, opts) {
+    var end = new Date(opts.end).getTime();
+    var totalDays = Math.max(1, opts.totalDays || 1);
+    var now = opts.now || Date.now;
+    var timer = root.querySelector('.countdown__timer');
+    var timeoutId = null;
+    var lastLabelKey = null;
+    var els = {};
+
+    timer.innerHTML = UNITS.map(function (u, i) {
+      return (i ? '<span class="countdown__sep">:</span>' : '') +
+        '<div class="countdown__unit" data-unit="' + u.key + '">' +
+          '<div class="countdown__value">00</div>' +
+          '<div class="countdown__label">' + u.label + '</div>' +
+          '<svg class="countdown__progress" viewBox="0 0 58 62" width="58" height="62">' +
+            '<path d="' + PATH + '" fill="none" stroke="#FEC42D" stroke-width="2" stroke-linecap="butt"' +
+            ' pathLength="100" stroke-dasharray="100 100"/></svg>' +
+        '</div>';
+    }).join('');
+
+    UNITS.forEach(function (u) {
+      var unit = timer.querySelector('[data-unit="' + u.key + '"]');
+      els[u.key] = { value: unit.querySelector('.countdown__value'), path: unit.querySelector('path') };
+    });
+
+    // Mobil / desktop: sayfa data-layout vermediyse ortam sorgusuna göre seç
+    var mq = window.matchMedia('(max-width: 959px)');
+    function applyLayout() {
+      if (root.dataset.layoutFixed !== 'true') root.dataset.layout = mq.matches ? 'mobile' : 'desktop';
+    }
+    if (root.dataset.layout) root.dataset.layoutFixed = 'true';
+    applyLayout();
+    mq.addEventListener('change', applyLayout);
+
+    function setUnit(key, value, ratio) {
+      var el = els[key];
+      el.value.textContent = pad(value);
+      el.path.style.strokeDashoffset = String(-(1 - ratio) * 100);
+      el.path.style.visibility = ratio <= 0 ? 'hidden' : 'visible';
+    }
+
+    function render() {
+      var total = Math.max(0, Math.floor((end - now()) / 1000)); // eksiye düşmez
+      var d = Math.min(99, Math.floor(total / 86400));
+      var h = Math.floor(total % 86400 / 3600);
+      var m = Math.floor(total % 3600 / 60);
+      var s = total % 60;
+
+      setUnit('day', d, Math.min(1, d / totalDays));
+      setUnit('hour', h, h / 24);
+      setUnit('minute', m, m / 60);
+      setUnit('second', s, s / 60);
+
+      // Ekran okuyucu etiketi yalnızca dakika değişince güncellenir
+      var labelKey = d + ':' + h + ':' + m;
+      if (labelKey !== lastLabelKey) {
+        lastLabelKey = labelKey;
+        root.setAttribute('aria-label',
+          'Fırsatın bitmesine ' + d + ' gün ' + h + ' saat ' + m + ' dakika kaldı');
+      }
+      return total;
+    }
+
+    function tick() {
+      var total = render();
+      if (total <= 0) return; // 00'da dur
+      timeoutId = setTimeout(tick, 1000 - (now() % 1000)); // bir sonraki tam saniye
+    }
+    tick();
+
+    return {
+      destroy: function () {
+        clearTimeout(timeoutId);
+        mq.removeEventListener('change', applyLayout);
+      }
+    };
+  }
+
+  window.mountCountdown = mountCountdown;
+})();
+</script>
+
+<!-- ============ DEMO JS (bileşene dahil değil) ============ -->
+<script>
+(function () {
+  var root = document.getElementById('countdown');
+  var stage = document.getElementById('stage');
+  var meta = document.getElementById('meta');
+  var instance = null;
+  var SEC = 1000, MIN = 60 * SEC, HOUR = 60 * MIN, DAY = 24 * HOUR;
+  var REF = 2 * DAY + 14 * HOUR + 45 * MIN + 20 * SEC; // Figma 4896:384
+
+  // ?end=2026-11-20T23:59:59%2B03:00&totalDays=5 ile gerçek tarih denenebilir
+  var params = new URLSearchParams(location.search);
+
+  function scenario(name) {
+    var t = Math.ceil(Date.now() / 1000) * 1000;
+    if (name === 'ref') return { end: REF, totalDays: 5, now: function () { return 0; } };
+    if (name === 'wrap') return { end: t + 3 * MIN + 5 * SEC, totalDays: 5 };
+    if (name === 'end') return { end: t + 10 * SEC, totalDays: 5 };
+    if (params.get('end')) return { end: params.get('end'), totalDays: Number(params.get('totalDays')) || 5 };
+    return { end: t + REF, totalDays: 5 };
+  }
+
+  function press(group, btn) {
+    group.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+  }
+
+  function run(name) {
+    if (instance) instance.destroy();
+    var o = scenario(name);
+    instance = window.mountCountdown(root, o);
+    meta.textContent = 'end: ' + (typeof o.end === 'string' ? o.end : new Date(o.end).toISOString()) +
+      (name === 'ref' ? ' (sabit: 02:14:45:20)' : '') + ' · totalDays: ' + o.totalDays;
+  }
+
+  var widths = document.getElementById('widths');
+  widths.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    press(widths, b);
+    stage.style.width = b.dataset.w === 'auto' ? 'auto' : b.dataset.w + 'px';
+    if (b.dataset.layout) {
+      root.dataset.layoutFixed = 'true';
+      root.dataset.layout = b.dataset.layout;
+    } else {
+      root.dataset.layoutFixed = 'false';
+      root.dataset.layout = window.matchMedia('(max-width: 959px)').matches ? 'mobile' : 'desktop';
+    }
+  });
+
+  var scenarios = document.getElementById('scenarios');
+  scenarios.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    press(scenarios, b);
+    run(b.dataset.s);
+  });
+
+  // Başlangıç: dar pencerede otomatik, genişte 1500
+  var startW = window.matchMedia('(max-width: 959px)').matches ? 'auto' : '1500';
+  widths.querySelector('[data-w="' + startW + '"]').click();
+  scenarios.querySelector('[data-s="live"]').click();
+})();
+</script>
+</body>
+</html>
